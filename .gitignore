@@ -1,0 +1,42 @@
+# Ignore the node_modules directory, which contains installed packages.
+# This should be in the root of your project to catch all instances.
+node_modules/
+
+# Ignore log files, npm debug logs, and package lock files if you're using yarn.
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+
+# Optional: If you use a .env file to store environment variables (like API keys or database URLs),
+# you should ALWAYS ignore it to keep secrets out of your repository.
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+
+### Operating System Files ###
+# Ignore macOS specific files
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Ignore Windows specific files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+
+### Editor Directories and Files ###
+# Ignore files from editors like VSCode, Sublime Text, and Atom
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.idea
+*.sublime-project
+*.sublime-workspace
+
