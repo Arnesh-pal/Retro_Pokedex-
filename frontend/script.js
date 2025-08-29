@@ -31,7 +31,7 @@ const loader = document.getElementById('loader');
 const pokemonModal = document.getElementById('pokemonModal');
 const modalContainer = document.getElementById('modalContainer');
 const generationSelector = document.getElementById('generationSelector');
-const API_BASE_URL = 'http://localhost:3001';
+const API_BASE_URL = 'https://pokedex-fww9.onrender.com';
 let currentGenerationData = [], allPokemonForModal = {}, searchTimeout;
 
 const fetchPokemonByGeneration = async (gen) => {
