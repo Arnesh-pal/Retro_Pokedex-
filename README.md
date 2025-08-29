@@ -10,11 +10,8 @@ A retro-themed, fully responsive Pokédex application built with vanilla JavaScr
 
 | Desktop View | Mobile View |
 | :---: | :---: |
-| <img width="1414" height="846" alt="image" src="https://github.com/user-attachments/assets/f7c1bbba-ffaf-4895-ab2a-55d545a2aeea" />
- | <img width="444" height="846" alt="image" src="https://github.com/user-attachments/assets/ecf9b3fc-8339-471e-afac-11208a23db80" />
- |
+| <img width="1414" alt="Desktop Screenshot" src="https://github.com/user-attachments/assets/f7c1bbba-ffaf-4895-ab2a-55d545a2aeea" /> | <img width="444" alt="Mobile Screenshot" src="https://github.com/user-attachments/assets/ecf9b3fc-8339-471e-afac-11208a23db80" /> |
 | A full view of the Pokédex on a desktop, showcasing the CRT effect and Pokémon grid. | The vertically-oriented mobile layout, optimized for a handheld experience. |
-
 
 ---
 
