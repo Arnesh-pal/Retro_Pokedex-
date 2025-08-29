@@ -13,7 +13,13 @@ const typeCache = {};
 let masterPokemonList = [];
 let isMasterListReady = false;
 
-app.use(cors());
+// NEW CODE
+const corsOptions = {
+    origin: 'https://pokedex03.netlify.app', // Your Netlify frontend URL
+    optionsSuccessStatus: 200
+};
+
+app.use(cors(corsOptions));
 app.use(express.json());
 
 const getIdFromUrl = (url) => url.split('/').filter(Boolean).pop();
