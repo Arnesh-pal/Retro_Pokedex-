@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CRT TV – Full Pokédex</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600&family=VT323&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <main class="crt-wrap">
+        <section class="crt-tv" data-powered="on">
+            <div class="bezel-cut">
+                <div class="screen" id="crtScreen">
+                    <div class="screen-content" id="pokedexSlot">
+                        <div class="content">
+                            <header class="text-center mb-6 pokedex-header">
+                                <div class="flex justify-center items-center gap-4">
+                                    <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png"
+                                        alt="Pokeball">
+                                    <h1>Pokédex</h1>
+                                </div>
+                            </header>
+                            <div id="generationSelector" class="flex flex-wrap justify-center gap-2 mb-4">
+                                <button class="gen-btn px-3 py-1 text-lg rounded-lg active" data-gen="1">I</button>
+                                <button class="gen-btn px-3 py-1 text-lg rounded-lg" data-gen="2">II</button>
+                                <button class="gen-btn px-3 py-1 text-lg rounded-lg" data-gen="3">III</button>
+                                <button class="gen-btn px-3 py-1 text-lg rounded-lg" data-gen="4">IV</button>
+                                <button class="gen-btn px-3 py-1 text-lg rounded-lg" data-gen="5">V</button>
+                                <button class="gen-btn px-3 py-1 text-lg rounded-lg" data-gen="6">VI</button>
+                                <button class="gen-btn px-3 py-1 text-lg rounded-lg" data-gen="7">VII</button>
+                                <button class="gen-btn px-3 py-1 text-lg rounded-lg" data-gen="8">VIII</button>
+                                <button class="gen-btn px-3 py-1 text-lg rounded-lg" data-gen="9">IX</button>
+                            </div>
+                            <div class="mb-6">
+                                <input type="text" id="searchInput" placeholder="Search by name or number..."
+                                    class="w-full p-2 text-lg rounded-lg focus:outline-none transition">
+                            </div>
+                            <div id="loader" class="text-center">
+                                <div class="animate-spin rounded-full h-12 w-12 border-b-4 border-yellow-400 mx-auto">
+                                </div>
+                                <p class="mt-4 text-lg">LOADING...</p>
+                            </div>
+                            <div id="pokedexGrid" class="grid gap-4"></div>
+                        </div>
+                    </div>
+                    <div class="scanlines"></div>
+                    <div class="mask"></div>
+                    <div class="vignette"></div>
+                    <div class="glare"></div>
+                    <div class="flicker"></div>
+                    <div class="power-flash" id="powerFlash"></div>
+                </div>
+            </div>
+            <aside class="side">
+
+                <div class="power-controls">
+                    <div class="led on" id="powerLed" aria-hidden="true"></div>
+                    <button class="knob" id="powerKnob" title="Power"></button>
+                </div>
+                <div class="grille"></div>
+            </aside>
+        </section>
+    </main>
+
+    <div id="pokemonModal" class="fixed inset-0 flex items-center justify-center p-4 z-50 hidden">
+        <div id="modalContainer"
+            class="w-full max-w-lg max-h-[90vh] relative transform scale-95 transition-transform duration-300"></div>
+    </div>
+
+    <script src="script.js" defer></script>
+</body>
+
+</html>
