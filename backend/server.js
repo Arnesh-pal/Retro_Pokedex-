@@ -20,6 +20,11 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.use(express.json());
 
+// Health Check Endpoint for UptimeRobot
+app.get('/health', (req, res) => {
+    res.status(200).json({ status: 'ok', message: 'Server is healthy.' });
+});
+
 const getIdFromUrl = (url) => url.split('/').filter(Boolean).pop();
 
 /**
