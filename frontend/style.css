@@ -662,8 +662,13 @@ body {
 
     .crt-wrap {
         width: 95vw;
-        min-height: auto;
+        min-height: 90vh;
         max-height: none;
+    }
+
+    .screen {
+        /* Change the screen's aspect ratio to be more vertical */
+        aspect-ratio: 3 / 4;
     }
 
     .crt-tv {
