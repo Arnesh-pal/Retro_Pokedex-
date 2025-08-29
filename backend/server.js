@@ -1,5 +1,5 @@
 // server.js
-// Final version with the Species data fix.
+// Final refactored version to ensure all data, including species, is fetched reliably.
 
 const express = require('express');
 const axios = require('axios');
@@ -8,9 +8,9 @@ const cors = require('cors');
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-const generationCache = {};
+// A single cache for fully detailed Pokémon objects.
 const pokemonDetailCache = {};
-let masterPokemonList = [];
+let masterPokemonList = []; // For search functionality.
 
 const corsOptions = {
     origin: 'https://pokedex03.netlify.app', // Your Netlify frontend URL
@@ -22,43 +22,63 @@ app.use(express.json());
 
 const getIdFromUrl = (url) => url.split('/').filter(Boolean).pop();
 
-// This function now ONLY gets the basic details from the main /pokemon/ endpoint.
-const getBasePokemonDetails = async (identifier) => {
+/**
+ * The single, authoritative function to get ALL details for a Pokémon.
+ * It fetches from both the main pokemon and the species endpoints,
+ * combines them, and caches the complete result.
+ */
+const getFullPokemonDetails = async (identifier) => {
     const lowerId = String(identifier).toLowerCase();
-    if (pokemonDetailCache[lowerId] && pokemonDetailCache[lowerId].species) {
-        return pokemonDetailCache[lowerId]; // Return from cache if we have full details
+
+    // If we have a fully detailed object in cache, return it immediately.
+    if (pokemonDetailCache[lowerId]) {
+        return pokemonDetailCache[lowerId];
     }
+
     try {
-        const response = await axios.get(`https://pokeapi.co/api/v2/pokemon/${lowerId}`);
-        const data = response.data;
-        const details = {
-            id: data.id,
-            name: data.name,
-            imageUrl: data.sprites.other['official-artwork'].front_default,
-            types: data.types.map(t => t.type.name),
-            height: data.height,
-            weight: data.weight,
-            stats: data.stats.map(s => ({ name: s.stat.name, value: s.base_stat })),
-            abilities: data.abilities.map(a => a.ability.name.replace(/-/g, ' ')),
-            moves: data.moves.map(m => m.move.name.replace(/-/g, ' ')).sort(),
+        // Fetch both sets of data in parallel for speed.
+        const pokemonPromise = axios.get(`https://pokeapi.co/api/v2/pokemon/${lowerId}`);
+        const speciesPromise = axios.get(`https://pokeapi.co/api/v2/pokemon-species/${lowerId}`);
+
+        const [pokemonResponse, speciesResponse] = await Promise.all([pokemonPromise, speciesPromise]);
+
+        const pokemonData = pokemonResponse.data;
+        const speciesData = speciesResponse.data;
+
+        // Find the English "genus" (which we call Species).
+        const genusEntry = speciesData.genera.find(g => g.language.name === 'en');
+        const speciesName = genusEntry ? genusEntry.genus.replace(' Pokémon', '') : 'Unknown';
+
+        const fullDetails = {
+            id: pokemonData.id,
+            name: pokemonData.name,
+            imageUrl: pokemonData.sprites.other['official-artwork'].front_default,
+            types: pokemonData.types.map(t => t.type.name),
+            height: pokemonData.height,
+            weight: pokemonData.weight,
+            stats: pokemonData.stats.map(s => ({ name: s.stat.name, value: s.base_stat })),
+            abilities: pokemonData.abilities.map(a => a.ability.name.replace(/-/g, ' ')),
+            moves: pokemonData.moves.map(m => m.move.name.replace(/-/g, ' ')).sort(),
+            species: speciesName, // The corrected species data!
         };
-        // Store base details in cache
-        pokemonDetailCache[lowerId] = details;
-        return details;
+
+        // Cache the complete object.
+        pokemonDetailCache[lowerId] = fullDetails;
+        return fullDetails;
+
     } catch (error) {
-        console.error(`Failed to get base details for: ${lowerId}`, error.message);
-        return null;
+        console.error(`Failed to get full details for: ${lowerId}`, error.message);
+        return null; // Return null if any API call fails.
     }
 };
 
 const getEvolutionPokemonInfo = async (pokemonId) => {
     try {
         const response = await axios.get(`https://pokeapi.co/api/v2/pokemon/${pokemonId}`);
-        const data = response.data;
         return {
-            id: data.id,
-            name: data.name,
-            imageUrl: data.sprites.other['official-artwork'].front_default
+            id: response.data.id,
+            name: response.data.name,
+            imageUrl: response.data.sprites.other['official-artwork'].front_default
         };
     } catch (error) { return null; }
 };
@@ -71,7 +91,6 @@ const parseEvolutionChain = (chainNode) => {
         let triggerText = `${detail.trigger.name.replace('-', ' ')}`;
         if (detail.min_level) triggerText += ` Lvl ${detail.min_level}`;
         if (detail.item) triggerText += ` w/ ${detail.item.name.replace('-', ' ')}`;
-        if (detail.held_item) triggerText += ` holding ${detail.held_item.name.replace('-', ' ')}`;
         return `(${triggerText})`;
     };
     return {
@@ -85,42 +104,28 @@ const parseEvolutionChain = (chainNode) => {
 // --- API Routes ---
 
 app.get('/api/pokemon/generation/:gen', async (req, res) => {
-    const { gen } = req.params;
-    const cacheKey = `gen_${gen}`;
-    if (generationCache[cacheKey]) {
-        return res.json(generationCache[cacheKey]);
-    }
     try {
-        const genResponse = await axios.get(`https://pokeapi.co/api/v2/generation/${gen}`);
-        const promises = genResponse.data.pokemon_species.map(s => getBasePokemonDetails(s.name));
+        const genResponse = await axios.get(`https://pokeapi.co/api/v2/generation/${req.params.gen}`);
+        const promises = genResponse.data.pokemon_species.map(s => getFullPokemonDetails(s.name));
         const results = (await Promise.all(promises)).filter(p => p !== null).sort((a, b) => a.id - b.id);
-        generationCache[cacheKey] = results;
         res.json(results);
     } catch (error) {
-        res.status(500).json({ message: `Failed to fetch data for Gen ${gen}.` });
+        res.status(500).json({ message: `Failed to fetch data for Gen ${req.params.gen}.` });
     }
 });
 
 app.get('/api/pokemon/search/:query', async (req, res) => {
     if (masterPokemonList.length === 0) {
-        console.log('First search triggered. Initializing master Pokémon list...');
         try {
             const listResponse = await axios.get('https://pokeapi.co/api/v2/pokemon-species?limit=1500');
-            masterPokemonList = listResponse.data.results.map(pokemon => ({
-                name: pokemon.name,
-                id: getIdFromUrl(pokemon.url)
-            }));
-            console.log(`Master list initialized with ${masterPokemonList.length} Pokémon!`);
+            masterPokemonList = listResponse.data.results.map(p => ({ name: p.name, id: getIdFromUrl(p.url) }));
         } catch (error) {
-            console.error('Failed to initialize master Pokémon list:', error.message);
             return res.status(503).json({ message: 'Failed to build search index.' });
         }
     }
-
     const query = req.params.query.toLowerCase();
     const results = masterPokemonList.filter(p => p.name.includes(query) || String(p.id).includes(query));
-
-    const detailedResults = await Promise.all(results.slice(0, 50).map(p => getBasePokemonDetails(p.name)));
+    const detailedResults = await Promise.all(results.slice(0, 50).map(p => getFullPokemonDetails(p.name)));
     res.json(detailedResults.filter(p => p !== null));
 });
 
@@ -128,62 +133,31 @@ app.get('/api/pokemon/evolution/:id', async (req, res) => {
     try {
         const speciesResponse = await axios.get(`https://pokeapi.co/api/v2/pokemon-species/${req.params.id}`);
         const evolutionResponse = await axios.get(speciesResponse.data.evolution_chain.url);
-
         const addImagesToChain = async (node) => {
             if (!node) return null;
-            const pokemonInfo = await getEvolutionPokemonInfo(node.id);
-            if (pokemonInfo) {
-                node.imageUrl = pokemonInfo.imageUrl;
-                node.name = pokemonInfo.name;
+            const info = await getEvolutionPokemonInfo(node.id);
+            if (info) {
+                node.imageUrl = info.imageUrl;
+                node.name = info.name;
             }
-            if (node.evolves_to && node.evolves_to.length > 0) {
-                node.evolves_to = await Promise.all(node.evolves_to.map(addImagesToChain));
-            }
+            node.evolves_to = await Promise.all(node.evolves_to.map(addImagesToChain));
             return node;
         };
-
-        const evolutionTree = parseEvolutionChain(evolutionResponse.data.chain);
-        const evolutionTreeWithImages = await addImagesToChain(evolutionTree);
-        res.json(evolutionTreeWithImages);
+        const tree = parseEvolutionChain(evolutionResponse.data.chain);
+        res.json(await addImagesToChain(tree));
     } catch (error) {
         res.status(500).json({ message: 'Failed to fetch evolution data.' });
     }
 });
 
-// This is the main route for getting FULL details for the modal.
+// This route now simply calls our main function.
 app.get('/api/pokemon/:id', async (req, res) => {
-    const identifier = String(req.params.id).toLowerCase();
-
-    // First, get the base details (from cache or API)
-    let pokemonDetails = await getBasePokemonDetails(identifier);
-    if (!pokemonDetails) {
-        return res.status(404).json({ message: 'Pokémon not found.' });
+    const pokemonDetails = await getFullPokemonDetails(req.params.id);
+    if (pokemonDetails) {
+        res.json(pokemonDetails);
+    } else {
+        res.status(444).json({ message: 'Pokémon not found.' });
     }
-
-    // If we don't have species data yet, fetch it now.
-    if (!pokemonDetails.species) {
-        try {
-            const speciesResponse = await axios.get(`https://pokeapi.co/api/v2/pokemon-species/${pokemonDetails.id}`);
-            const speciesData = speciesResponse.data;
-
-            // Find the English genus entry.
-            const genusEntry = speciesData.genera.find(g => g.language.name === 'en');
-            const speciesName = genusEntry ? genusEntry.genus.replace(' Pokémon', '') : 'Unknown';
-
-            // Merge the new data into our existing object
-            pokemonDetails.species = speciesName;
-
-            // Update the cache with the full details
-            pokemonDetailCache[identifier] = pokemonDetails;
-
-        } catch (error) {
-            console.error(`Failed to get species data for: ${identifier}`, error.message);
-            // Even if this fails, we can still send the base data.
-            pokemonDetails.species = 'Unknown';
-        }
-    }
-
-    res.json(pokemonDetails);
 });
 
 app.listen(PORT, () => {
