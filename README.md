@@ -50,6 +50,13 @@ This project is a full-stack application composed of a vanilla frontend and a No
 
 ---
 
+## 📜 License
+
+Distributed under the **MIT License**.
+See [`LICENSE`](./LICENSE) for more information.
+
+---
+
 ## 🚀 Deployment
 
 The application is deployed using a modern, decoupled approach:
@@ -76,7 +83,7 @@ To get a local copy up and running, follow these simple steps.
 
 1.  **Clone the repo**
     ```sh
-    git clone [https://github.com/your_username/your_repository_name.git](https://github.com/your_username/your_repository_name.git)
+    git clone [https://github.com/Arnesh-pal/Retro_Pokedex-.git]
     ```
 2.  **Navigate to the backend and install dependencies**
     ```sh
